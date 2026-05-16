@@ -312,6 +312,30 @@ app.post("/admin/login", (req, res) => {
   )
 })
 
+app.get("/orders", (req, res) => {
+  db.query(
+    "SELECT * FROM orders ORDER BY createdAt DESC",
+    (err, result) => {
+      if (err) return res.status(500).json(err)
+      res.json(result)
+    }
+  )
+})
+
+app.put("/orders/:id/status", (req, res) => {
+  const id = req.params.id
+  const { status } = req.body
+
+  db.query(
+    "UPDATE orders SET status = ? WHERE id = ?",
+    [status, id],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
