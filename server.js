@@ -398,6 +398,43 @@ app.post("/orders", (req, res) => {
   )
 })
 
+app.get("/setup-orders", (req, res) => {
+  db.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerName VARCHAR(255),
+      customerAddress TEXT,
+      customerPhone VARCHAR(50),
+      customerRegion VARCHAR(255),
+      paymentMethod VARCHAR(50),
+      note TEXT,
+      serviceFee INT DEFAULT 0,
+      total INT DEFAULT 0,
+      status VARCHAR(50) DEFAULT 'Bekliyor',
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) return res.status(500).json(err)
+
+    db.query(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        orderId INT,
+        productId INT,
+        productName VARCHAR(255),
+        quantity INT,
+        price INT,
+        subtotal INT,
+        FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE
+      )
+    `, (err2) => {
+      if (err2) return res.status(500).json(err2)
+
+      res.json({ success: true, message: "Sipariş tabloları oluşturuldu" })
+    })
+  })
+})
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
