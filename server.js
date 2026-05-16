@@ -336,6 +336,68 @@ app.put("/orders/:id/status", (req, res) => {
   )
 })
 
+app.post("/orders", (req, res) => {
+  const {
+    customerName,
+    customerAddress,
+    customerPhone,
+    customerRegion,
+    paymentMethod,
+    note,
+    serviceFee,
+    total,
+    items
+  } = req.body
+
+  db.query(
+    `INSERT INTO orders
+    (customerName, customerAddress, customerPhone, customerRegion, paymentMethod, note, serviceFee, total)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      customerName,
+      customerAddress,
+      customerPhone,
+      customerRegion,
+      paymentMethod,
+      note,
+      serviceFee,
+      total
+    ],
+    (err, result) => {
+      if (err) {
+        console.log("ORDER INSERT ERROR:", err)
+        return res.status(500).json({ success: false, message: err.message })
+      }
+
+      const orderId = result.insertId
+
+      const values = items.map(item => [
+        orderId,
+        item.productId,
+        item.productName,
+        item.quantity,
+        item.price,
+        item.subtotal
+      ])
+
+      db.query(
+        `INSERT INTO order_items
+        (orderId, productId, productName, quantity, price, subtotal)
+        VALUES ?`,
+        [values],
+        (err2) => {
+          if (err2) {
+            console.log("ORDER ITEMS ERROR:", err2)
+            return res.status(500).json({ success: false, message: err2.message })
+          }
+
+          res.json({ success: true, orderId })
+        }
+      )
+    }
+  )
+})
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
