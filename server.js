@@ -15,13 +15,13 @@ app.use(express.json())
   port: Number(process.env.MYSQLPORT)
 })*/
 
-/*const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT
-})*/
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "root17",
+  database: "marketdb",
+  port: 3306
+})
 
 db.connect((err) => {
   if (err) {
@@ -281,6 +281,27 @@ app.delete("/categories/:id", (req, res) => {
     }
   )
 
+})
+
+app.post("/admin/login", (req, res) => {
+  const { username, password } = req.body
+
+  db.query(
+    "SELECT * FROM admins WHERE username = ? AND password = ?",
+    [username, password],
+    (err, result) => {
+      if (err) {
+        console.log(err)
+        return res.status(500).json({ success: false, message: "Sunucu hatası" })
+      }
+
+      if (result.length === 0) {
+        return res.status(401).json({ success: false, message: "Hatalı giriş" })
+      }
+
+      res.json({ success: true, message: "Giriş başarılı" })
+    }
+  )
 })
 
 const PORT = process.env.PORT || 3000
