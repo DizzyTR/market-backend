@@ -15,12 +15,20 @@ app.use(express.json())
   port: Number(process.env.MYSQLPORT)
 })*/
 
-const db = mysql.createConnection({
+/*const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "root17",
   database: "marketdb",
   port: 3306
+})*/
+
+const db = mysql.createConnection({
+  host: process.env.MYSQLHOST || "localhost",
+  user: process.env.MYSQLUSER || "root",
+  password: process.env.MYSQLPASSWORD || "LOCAL_MYSQL_SIFREN",
+  database: process.env.MYSQLDATABASE || "marketdb",
+  port: Number(process.env.MYSQLPORT || 3306)
 })
 
 db.connect((err) => {
