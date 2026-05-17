@@ -67,13 +67,14 @@ app.post("/products", (req, res) => {
 
   db.query(
     `INSERT INTO products 
-    (name, price, \`desc\`, cat, emoji, imageUrl, active)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    (name, price, \`desc\`, cat, subCat, emoji, imageUrl, active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       price,
       desc,
       cat,
+      subCat,
       emoji,
       imageUrl,
       active
@@ -125,6 +126,7 @@ app.put("/products/:id", (req, res) => {
     desc,
     price,
     cat,
+    subCat,
     emoji,
     imageUrl,
     active
@@ -137,6 +139,7 @@ app.put("/products/:id", (req, res) => {
       \`desc\`=?,
       price=?,
       cat=?,
+      subCat=?,
       emoji=?,
       imageUrl=?,
       active=?
@@ -146,6 +149,7 @@ app.put("/products/:id", (req, res) => {
       desc,
       price,
       cat,
+      subCat,
       emoji,
       imageUrl,
       active,
