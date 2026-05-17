@@ -295,6 +295,49 @@ app.delete("/categories/:id", (req, res) => {
 
 })
 
+app.get("/subcategories", (req, res) => {
+  db.query("SELECT * FROM subcategories", (err, result) => {
+    if (err) return res.status(500).json(err)
+    res.json(result)
+  })
+})
+
+app.post("/subcategories", (req, res) => {
+  const { id, catId, name, active } = req.body
+
+  db.query(
+    "INSERT INTO subcategories (id, catId, name, active) VALUES (?, ?, ?, ?)",
+    [id, catId, name, active ? 1 : 0],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
+app.put("/subcategories/:id", (req, res) => {
+  const oldId = req.params.id
+  const { id, catId, name, active } = req.body
+
+  db.query(
+    "UPDATE subcategories SET id=?, catId=?, name=?, active=? WHERE id=?",
+    [id, catId, name, active ? 1 : 0, oldId],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
+app.delete("/subcategories/:id", (req, res) => {
+  const id = req.params.id
+
+  db.query("DELETE FROM subcategories WHERE id=?", [id], (err) => {
+    if (err) return res.status(500).json(err)
+    res.json({ success: true })
+  })
+})
+
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body
 
