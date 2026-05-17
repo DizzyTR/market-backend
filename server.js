@@ -401,9 +401,21 @@ app.post("/orders", (req, res) => {
 app.post("/track-order", (req, res) => {
   const { orderId, phone } = req.body
 
+  const cleanedPhone = String(phone).replace(/[^0-9]/g, "")
+  const phoneWithoutCountry = cleanedPhone.startsWith("90")
+    ? "0" + cleanedPhone.slice(2)
+    : cleanedPhone
+
   db.query(
-    "SELECT id, customerName, customerPhone, customerRegion, total, status, createdAt FROM orders WHERE id = ? AND customerPhone = ?",
-    [orderId, phone],
+    `SELECT id, customerName, customerPhone, customerRegion, total, status, createdAt
+     FROM orders
+     WHERE id = ?
+     AND (
+      customerPhone = ?
+      OR customerPhone = ?
+      OR REPLACE(REPLACE(REPLACE(customerPhone, ' ', ''), '+', ''), '-', '') = ?
+     )`,
+    [orderId, cleanedPhone, phoneWithoutCountry, cleanedPhone],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: err.message })
 
