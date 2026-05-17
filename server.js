@@ -398,6 +398,24 @@ app.post("/orders", (req, res) => {
   )
 })
 
+app.post("/track-order", (req, res) => {
+  const { orderId, phone } = req.body
+
+  db.query(
+    "SELECT id, customerName, customerPhone, customerRegion, total, status, createdAt FROM orders WHERE id = ? AND customerPhone = ?",
+    [orderId, phone],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false, message: err.message })
+
+      if (result.length === 0) {
+        return res.status(404).json({ success: false, message: "Sipariş bulunamadı" })
+      }
+
+      res.json({ success: true, order: result[0] })
+    }
+  )
+})
+
 const PORT = process.env.PORT || 3000
 
 app.listen(PORT, () => {
