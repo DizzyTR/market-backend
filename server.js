@@ -398,6 +398,20 @@ app.post("/orders", (req, res) => {
   )
 })
 
+app.get("/orders/:id/items", (req, res) => {
+  const orderId = req.params.id
+
+  db.query(
+    "SELECT * FROM order_items WHERE orderId = ?",
+    [orderId],
+    (err, items) => {
+      if (err) return res.status(500).json({ success: false, message: err.message })
+
+      res.json(items)
+    }
+  )
+})
+
 app.post("/track-order", (req, res) => {
   const { orderId, phone } = req.body
 
