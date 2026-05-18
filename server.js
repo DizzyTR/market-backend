@@ -3,6 +3,7 @@ const mysql = require("mysql2")
 const cors = require("cors")
 const http = require("http")
 const { Server } = require("socket.io")
+const bcrypt = require("bcrypt")
 
 const app = express()
 const server = http.createServer(app)
@@ -518,6 +519,13 @@ app.post("/track-order", (req, res) => {
       res.json({ success: true, order: result[0] })
     }
   )
+})
+
+app.get("/create-admin-hash", async (req, res) => {
+  const password = "1234"
+  const hash = await bcrypt.hash(password, 10)
+
+  res.json({ hash })
 })
 
 const PORT = process.env.PORT || 3000
