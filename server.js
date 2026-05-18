@@ -1,11 +1,29 @@
 const express = require("express")
 const mysql = require("mysql2")
 const cors = require("cors")
+const http = require("http")
+const { Server } = require("socket.io")
 
 const app = express()
+const server = http.createServer(app)
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"]
+  }
+})
 
 app.use(cors())
 app.use(express.json())
+
+io.on("connection", (socket) => {
+  console.log("Admin socket bağlandı:", socket.id)
+
+  socket.on("disconnect", () => {
+    console.log("Socket ayrıldı:", socket.id)
+  })
+})
 
 /*const db = mysql.createConnection({
   host: process.env.MYSQLHOST,
@@ -60,6 +78,7 @@ app.post("/products", (req, res) => {
     price,
     desc,
     cat,
+    subCat,
     emoji,
     imageUrl,
     active
@@ -378,6 +397,12 @@ app.put("/orders/:id/status", (req, res) => {
     [status, id],
     (err) => {
       if (err) return res.status(500).json(err)
+
+      io.emit("order-status-updated", {
+        id,
+        status
+      })
+
       res.json({ success: true })
     }
   )
@@ -437,6 +462,12 @@ app.post("/orders", (req, res) => {
             console.log("ORDER ITEMS ERROR:", err2)
             return res.status(500).json({ success: false, message: err2.message })
           }
+          io.emit("new-order", {
+            orderId,
+            customerName,
+            total,
+            status: "Bekliyor"
+          })
 
           res.json({ success: true, orderId })
         }
@@ -491,6 +522,6 @@ app.post("/track-order", (req, res) => {
 
 const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => {
-  console.log("Server çalışıyor")
+server.listen(PORT, () => {
+  console.log(`Server çalışıyor: ${PORT}`)
 })
