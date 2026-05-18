@@ -362,15 +362,21 @@ app.post("/admin/login", (req, res) => {
   const { username, password } = req.body
 
   db.query(
-    "SELECT * FROM admins WHERE username = ? AND password = ?",
-    [username, password],
-    (err, result) => {
+    "SELECT * FROM admins WHERE username = ?",
+    [username],
+    async (err, result) => {
       if (err) {
-        console.log(err)
         return res.status(500).json({ success: false, message: "Sunucu hatası" })
       }
 
       if (result.length === 0) {
+        return res.status(401).json({ success: false, message: "Hatalı giriş" })
+      }
+
+      const admin = result[0]
+      const isMatch = await bcrypt.compare(password, admin.password)
+
+      if (!isMatch) {
         return res.status(401).json({ success: false, message: "Hatalı giriş" })
       }
 
@@ -519,13 +525,6 @@ app.post("/track-order", (req, res) => {
       res.json({ success: true, order: result[0] })
     }
   )
-})
-
-app.get("/create-admin-hash", async (req, res) => {
-  const password = "yonetim123"
-  const hash = await bcrypt.hash(password, 10)
-
-  res.json({ hash })
 })
 
 const PORT = process.env.PORT || 3000
