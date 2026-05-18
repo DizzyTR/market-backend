@@ -522,7 +522,7 @@ app.post("/track-order", (req, res) => {
 })
 
 app.get("/create-admin-hash", async (req, res) => {
-  const password = "1234"
+  const password = "yonetim123"
   const hash = await bcrypt.hash(password, 10)
 
   res.json({ hash })
