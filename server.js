@@ -506,14 +506,14 @@ app.post("/track-order", (req, res) => {
     : cleanedPhone
 
   db.query(
-    `SELECT id, customerName, customerPhone, customerRegion, total, status, createdAt
-     FROM orders
-     WHERE id = ?
-     AND (
-      customerPhone = ?
-      OR customerPhone = ?
-      OR REPLACE(REPLACE(REPLACE(customerPhone, ' ', ''), '+', ''), '-', '') = ?
-     )`,
+    `SELECT id, customerName, customerPhone, customerAddress, customerRegion, paymentMethod, note, serviceFee, total, status, createdAt
+    FROM orders
+    WHERE id = ?
+    AND (
+    customerPhone = ?
+    OR customerPhone = ?
+    OR REPLACE(REPLACE(REPLACE(customerPhone, ' ', ''), '+', ''), '-', '') = ?
+    )`,
     [orderId, cleanedPhone, phoneWithoutCountry, cleanedPhone],
     (err, result) => {
       if (err) return res.status(500).json({ success: false, message: err.message })
