@@ -527,6 +527,53 @@ app.post("/track-order", (req, res) => {
   )
 })
 
+app.get("/regions", (req, res) => {
+  db.query("SELECT * FROM regions", (err, result) => {
+    if (err) return res.status(500).json(err)
+    res.json(result)
+  })
+})
+
+app.post("/regions", (req, res) => {
+  const { id, name, fee, active } = req.body
+
+  db.query(
+    "INSERT INTO regions (id, name, fee, active) VALUES (?, ?, ?, ?)",
+    [id, name, fee, active ? 1 : 0],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
+app.put("/regions/:id", (req, res) => {
+  const oldId = req.params.id
+  const { id, name, fee, active } = req.body
+
+  db.query(
+    "UPDATE regions SET id=?, name=?, fee=?, active=? WHERE id=?",
+    [id, name, fee, active ? 1 : 0, oldId],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
+app.delete("/regions/:id", (req, res) => {
+  const id = req.params.id
+
+  db.query(
+    "DELETE FROM regions WHERE id=?",
+    [id],
+    (err) => {
+      if (err) return res.status(500).json(err)
+      res.json({ success: true })
+    }
+  )
+})
+
 const PORT = process.env.PORT || 3000
 
 server.listen(PORT, () => {
