@@ -8,14 +8,25 @@ const bcrypt = require("bcrypt")
 const app = express()
 const server = http.createServer(app)
 
+const allowedOrigins = [
+  "https://dizzytr.github.io",
+  "https://dizzytr.github.io/ilkermarket.github.io",
+  "https://ilkermarket.com.tr",
+  "https://www.ilkermarket.com.tr"
+]
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 })
 
-app.use(cors())
+app.use(cors({
+   origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type"]
+}))
 app.use(express.json())
 
 io.on("connection", (socket) => {
