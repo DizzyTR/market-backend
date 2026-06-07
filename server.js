@@ -23,7 +23,7 @@ const io = new Server(server, {
 })
 
 app.use(cors({
-   origin: allowedOrigins,
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type"]
 }))
@@ -93,13 +93,14 @@ app.post("/products", (req, res) => {
     subCat,
     emoji,
     imageUrl,
-    active
+    active,
+    featured
   } = req.body
 
   db.query(
     `INSERT INTO products 
-    (name, price, \`desc\`, cat, subCat, emoji, imageUrl, active)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    (name, price, \`desc\`, cat, subCat, emoji, imageUrl, active, featured)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       price,
@@ -108,7 +109,8 @@ app.post("/products", (req, res) => {
       subCat,
       emoji,
       imageUrl,
-      active
+      active,
+      featured
     ],
     (err, result) => {
 
@@ -154,13 +156,14 @@ app.put("/products/:id", (req, res) => {
 
   const {
     name,
-    desc,
     price,
+    desc,
     cat,
     subCat,
     emoji,
     imageUrl,
-    active
+    active,
+    featured
   } = req.body
 
   db.query(
@@ -174,6 +177,7 @@ app.put("/products/:id", (req, res) => {
       emoji=?,
       imageUrl=?,
       active=?
+      featured=?
      WHERE id=?`,
     [
       name,
@@ -183,7 +187,8 @@ app.put("/products/:id", (req, res) => {
       subCat,
       emoji,
       imageUrl,
-      active,
+      active ? 1 : 0,
+      featured ? 1 : 0,
       id
     ],
     (err, result) => {
