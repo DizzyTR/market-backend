@@ -176,7 +176,7 @@ app.put("/products/:id", (req, res) => {
       subCat=?,
       emoji=?,
       imageUrl=?,
-      active=?
+      active=?,
       featured=?
      WHERE id=?`,
     [
