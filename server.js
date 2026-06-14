@@ -4,6 +4,7 @@ const cors = require("cors")
 const http = require("http")
 const { Server } = require("socket.io")
 const bcrypt = require("bcrypt")
+const jwt = require("jsonwebtoken")
 
 const app = express()
 const server = http.createServer(app)
@@ -23,11 +24,57 @@ const io = new Server(server, {
 })
 
 app.use(cors({
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"]
+  origin: [
+    "https://ilkermarket.com.tr",
+    "https://www.ilkermarket.com.tr",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500"
+  ],
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS"
+  ],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization"
+  ]
 }))
 app.use(express.json())
+
+function requireAdmin(req, res, next) {
+  const authorization = req.headers.authorization || ""
+
+  if (!authorization.startsWith("Bearer ")) {
+    return res.status(401).json({
+      success: false,
+      message: "Admin girişi gerekli"
+    })
+  }
+
+  const token = authorization.slice(7)
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+    if (decoded.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Yetkiniz bulunmuyor"
+      })
+    }
+
+    req.admin = decoded
+    next()
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Oturum geçersiz veya süresi dolmuş"
+    })
+  }
+}
 
 io.on("connection", (socket) => {
   console.log("Admin socket bağlandı:", socket.id)
@@ -83,7 +130,7 @@ app.get("/products", (req, res) => {
   })
 })
 
-app.post("/products", (req, res) => {
+app.post("/products", requireAdmin, (req, res) => {
 
   const {
     name,
@@ -127,7 +174,7 @@ app.post("/products", (req, res) => {
   )
 })
 
-app.delete("/products/:id", (req, res) => {
+app.delete("/products/:id", requireAdmin, (req, res) => {
 
   const id = req.params.id
 
@@ -150,7 +197,7 @@ app.delete("/products/:id", (req, res) => {
 
 })
 
-app.put("/products/:id", (req, res) => {
+app.put("/products/:id", requireAdmin, (req, res) => {
 
   const id = req.params.id
 
@@ -224,7 +271,7 @@ app.get("/categories", (req, res) => {
 
 })
 
-app.post("/categories", (req, res) => {
+app.post("/categories", requireAdmin, (req, res) => {
 
   const {
     id,
@@ -262,7 +309,7 @@ app.post("/categories", (req, res) => {
 
 })
 
-app.put("/categories/:id", (req, res) => {
+app.put("/categories/:id", requireAdmin, (req, res) => {
 
   const oldId = req.params.id
 
@@ -309,7 +356,7 @@ app.put("/categories/:id", (req, res) => {
 
 })
 
-app.delete("/categories/:id", (req, res) => {
+app.delete("/categories/:id", requireAdmin, (req, res) => {
 
   const id = req.params.id
 
@@ -338,7 +385,7 @@ app.get("/subcategories", (req, res) => {
   })
 })
 
-app.post("/subcategories", (req, res) => {
+app.post("/subcategories", requireAdmin, (req, res) => {
   const { id, catId, name, active } = req.body
 
   db.query(
@@ -351,7 +398,7 @@ app.post("/subcategories", (req, res) => {
   )
 })
 
-app.put("/subcategories/:id", (req, res) => {
+app.put("/subcategories/:id", requireAdmin, (req, res) => {
   const oldId = req.params.id
   const { id, catId, name, active } = req.body
 
@@ -365,7 +412,7 @@ app.put("/subcategories/:id", (req, res) => {
   )
 })
 
-app.delete("/subcategories/:id", (req, res) => {
+app.delete("/subcategories/:id", requireAdmin, (req, res) => {
   const id = req.params.id
 
   db.query("DELETE FROM subcategories WHERE id=?", [id], (err) => {
@@ -377,28 +424,92 @@ app.delete("/subcategories/:id", (req, res) => {
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body
 
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Kullanıcı adı ve şifre gerekli"
+    })
+  }
+
   db.query(
     "SELECT * FROM admins WHERE username = ?",
     [username],
     async (err, result) => {
       if (err) {
-        return res.status(500).json({ success: false, message: "Sunucu hatası" })
+        console.error("Admin sorgu hatası:", err)
+
+        return res.status(500).json({
+          success: false,
+          message: "Sunucu hatası"
+        })
       }
 
       if (result.length === 0) {
-        return res.status(401).json({ success: false, message: "Hatalı giriş" })
+        return res.status(401).json({
+          success: false,
+          message: "Hatalı giriş"
+        })
       }
 
-      const admin = result[0]
-      const isMatch = await bcrypt.compare(password, admin.password)
+      try {
+        const admin = result[0]
 
-      if (!isMatch) {
-        return res.status(401).json({ success: false, message: "Hatalı giriş" })
+        const isMatch = await bcrypt.compare(
+          password,
+          admin.password
+        )
+
+        if (!isMatch) {
+          return res.status(401).json({
+            success: false,
+            message: "Hatalı giriş"
+          })
+        }
+
+        if (!process.env.JWT_SECRET) {
+          console.error("JWT_SECRET tanımlanmamış")
+
+          return res.status(500).json({
+            success: false,
+            message: "Sunucu yapılandırma hatası"
+          })
+        }
+
+        const token = jwt.sign(
+          {
+            adminId: admin.id,
+            username: admin.username,
+            role: "admin"
+          },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "30d"
+          }
+        )
+
+        return res.json({
+          success: true,
+          message: "Giriş başarılı",
+          token
+        })
+
+      } catch (error) {
+        console.error("Admin giriş hatası:", error)
+
+        return res.status(500).json({
+          success: false,
+          message: "Sunucu hatası"
+        })
       }
-
-      res.json({ success: true, message: "Giriş başarılı" })
     }
   )
+})
+
+app.get("/admin/verify", requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    admin: req.admin
+  })
 })
 
 app.get("/orders", (req, res) => {
@@ -411,7 +522,7 @@ app.get("/orders", (req, res) => {
   )
 })
 
-app.put("/orders/:id/status", (req, res) => {
+app.put("/orders/:id/status", requireAdmin, (req, res) => {
   const id = req.params.id
   const { status } = req.body
 
@@ -550,7 +661,7 @@ app.get("/regions", (req, res) => {
   })
 })
 
-app.post("/regions", (req, res) => {
+app.post("/regions", requireAdmin, (req, res) => {
   const { id, name, fee, active } = req.body
 
   db.query(
@@ -563,7 +674,7 @@ app.post("/regions", (req, res) => {
   )
 })
 
-app.put("/regions/:id", (req, res) => {
+app.put("/regions/:id", requireAdmin, (req, res) => {
   const oldId = req.params.id
   const { id, name, fee, active } = req.body
 
@@ -577,7 +688,7 @@ app.put("/regions/:id", (req, res) => {
   )
 })
 
-app.delete("/regions/:id", (req, res) => {
+app.delete("/regions/:id", requireAdmin, (req, res) => {
   const id = req.params.id
 
   db.query(
